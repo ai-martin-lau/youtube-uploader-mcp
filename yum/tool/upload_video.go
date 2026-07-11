@@ -45,11 +45,26 @@ func (t *UploadVideoTool) Define(context.Context) mcp.Tool {
 			mcp.Required(),
 			mcp.Description("Category ID for the video, if not provided, Agent should generate a category based on the video description"),
 		),
+		mcp.WithString("video_language",
+			mcp.Description("Language of the video's audio/content (ISO 639-1). Default is en (English)."),
+		),
 		mcp.WithString("status",
 			mcp.Description("status of video, could be any of unlisted, public, private. Default is private"),
 		),
 		mcp.WithString("publish_at",
 			mcp.Description("The date and time when the video is scheduled to publish. It can be set only if the privacy status of the video is private. The value is specified in ISO 8601 format (YYYY-MM-DDThh:mm:ss.sZ)."),
+		),
+		mcp.WithString("playlist_id",
+			mcp.Description("Optional playlist ID to which the uploaded video should be added"),
+		),
+		mcp.WithString("subtitle_path",
+			mcp.Description("Optional path to a subtitle file (e.g., .srt or .vtt) to attach to the uploaded video"),
+		),
+		mcp.WithString("subtitle_language",
+			mcp.Description("Language code of the subtitle track (ISO 639-1). Default is en (English)."),
+		),
+		mcp.WithString("thumbnail_path",
+			mcp.Description("Optional path to an image file to use as the video's custom thumbnail"),
 		),
 		mcp.WithBoolean("made_for_kids",
 			mcp.Description("Whether the video is made exclusively for kids. Default is false"),
@@ -77,6 +92,11 @@ func (t *UploadVideoTool) Handle(
 	}
 	status := request.GetString("status", "private")
 	madeForKids := request.GetBool("made_for_kids", false)
+	playlistID := request.GetString("playlist_id", "")
+	subtitlePath := request.GetString("subtitle_path", "")
+	subtitleLanguage := request.GetString("subtitle_language", "en")
+	videoLanguage := request.GetString("video_language", "en")
+	thumbnailPath := request.GetString("thumbnail_path", "")
 
 	channel, err := t.Core.GetChannelByID(channelId)
 	if err != nil {
@@ -118,6 +138,7 @@ func (t *UploadVideoTool) Handle(
 		Description:   description,
 		Tags:          strings.Split(tags, ","),
 		CategoryID:    categoryID,
+		Language:      videoLanguage,
 		PrivacyStatus: status,
 		MadeForKids:   madeForKids,
 		PublishAt:     request.GetString("publish_at", ""),
@@ -127,6 +148,24 @@ func (t *UploadVideoTool) Handle(
 		return mcp.NewToolResultError("Failed to upload video: " + err.Error()), nil
 	}
 	video.ID = id
+
+	if playlistID != "" {
+		if err := t.Core.AddVideoToPlaylist(ctx, playlistID, id, channel.Token); err != nil {
+			return mcp.NewToolResultError("Failed to add video to playlist: " + err.Error()), nil
+		}
+	}
+
+	if subtitlePath != "" {
+		if err := t.Core.AddSubtitles(ctx, id, subtitlePath, subtitleLanguage, channel.Token); err != nil {
+			return mcp.NewToolResultError("Failed to add subtitles: " + err.Error()), nil
+		}
+	}
+
+	if thumbnailPath != "" {
+		if err := t.Core.SetThumbnail(ctx, id, thumbnailPath, channel.Token); err != nil {
+			return mcp.NewToolResultError("Failed to set thumbnail: " + err.Error()), nil
+		}
+	}
 
 	bytes, err := json.Marshal(video)
 	if err != nil {

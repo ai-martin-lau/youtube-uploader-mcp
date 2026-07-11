@@ -16,6 +16,7 @@ type Video struct {
 	Description   string   `json:"description"`
 	Tags          []string `json:"tags"`
 	CategoryID    string   `json:"category_id"`
+	Language      string   `json:"language"`
 	PrivacyStatus string   `json:"privacy_status"`
 	MadeForKids   bool     `json:"made_for_kids"`
 	PublishAt     string   `json:"publish_at,omitempty"`
@@ -34,10 +35,12 @@ func (v *Video) toUpload() (*youtube.Video, error) {
 
 	upload := &youtube.Video{
 		Snippet: &youtube.VideoSnippet{
-			Title:       v.Title,
-			Description: v.Description,
-			Tags:        v.Tags,
-			CategoryId:  v.CategoryID,
+			Title:              v.Title,
+			Description:        v.Description,
+			Tags:               v.Tags,
+			CategoryId:         v.CategoryID,
+			DefaultLanguage:    v.Language,
+			DefaultAudioLanguage: v.Language,
 		},
 		Status: &youtube.VideoStatus{
 			PrivacyStatus: privacy,

@@ -26,11 +26,17 @@ To allow `youtube-uploader-mcp` to upload videos to your YouTube account, you'll
 3. If prompted to configure consent screen, do that first:
    - Select **External**.
    - Enter your app name, email, and scroll down to save.
-   - You don’t need to add scopes or test users for personal use.
+   - You don’t need to manually add scopes here; the app will request them during authentication.
 4. Now choose:
    - **Application Type**: `Desktop App`
    - **Name**: e.g., `YouTubeUploaderMCP`
 5. Click **Create**
+
+This app requests these YouTube scopes during OAuth:
+
+- `https://www.googleapis.com/auth/youtube.upload`
+- `https://www.googleapis.com/auth/youtube.readonly`
+- `https://www.googleapis.com/auth/youtube.force-ssl` (required for subtitle/caption upload via API)
 
 ## ✅ Step 4: Add your email to Test Audience
 This step is necessary to get Google authenticating your application.

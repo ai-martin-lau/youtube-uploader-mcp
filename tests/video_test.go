@@ -37,7 +37,9 @@ func (s *YumSuite) TestUploadVideo() {
 				"title": "mock-title",
 				"description": "mock-description",
 				"tags": ["mock-tag1", "mock-tag2"],
-				"categoryId": "mock-category-id"
+				"categoryId": "mock-category-id",
+				"defaultLanguage": "en",
+				"defaultAudioLanguage": "en"
 			},
 			"status": {
 				"privacyStatus": "mock-status"
@@ -82,7 +84,7 @@ func (s *YumSuite) TestUploadVideo() {
 		ExpectSuccessText(s.Ctx())
 	s.NoError(err)
 
-	s.Contains(text.Text, `{"id":"video_id_12345","path":"./data/videos/video_1.mp4","title":"mock-title","description":"mock-description","tags":["mock-tag1","mock-tag2"],"category_id":"mock-category-id","privacy_status":"mock-status","made_for_kids":false}`)
+	s.Contains(text.Text, `{"id":"video_id_12345","path":"./data/videos/video_1.mp4","title":"mock-title","description":"mock-description","tags":["mock-tag1","mock-tag2"],"category_id":"mock-category-id","language":"en","privacy_status":"mock-status","made_for_kids":false}`)
 }
 
 func (s *YumSuite) TestUploadScheduledVideo() {
@@ -112,7 +114,9 @@ func (s *YumSuite) TestUploadScheduledVideo() {
 				"title": "mock-title",
 				"description": "mock-description",
 				"tags": ["mock-tag1", "mock-tag2"],
-				"categoryId": "mock-category-id"
+				"categoryId": "mock-category-id",
+				"defaultLanguage": "en",
+				"defaultAudioLanguage": "en"
 			},
 			"status": {
 				"privacyStatus": "private",

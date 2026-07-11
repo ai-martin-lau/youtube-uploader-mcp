@@ -102,7 +102,7 @@ install_binary() {
   local url
   url="$(gh_release_url "$OS" "$ARCH" "$INSTALL_VERSION")"
 
-  local dest_dir="$HOME/youtube-uploader-mcp"
+  local dest_dir="$HOME/MCPs/youtube-uploader-mcp"
   mkdir -p "$dest_dir"
   BINARY_PATH="$dest_dir/${BINARY_BASENAME}-${OS}-${ARCH}"
 

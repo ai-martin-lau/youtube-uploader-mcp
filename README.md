@@ -81,6 +81,8 @@ To upload to YouTube, you must configure OAuth and get a client_secret.json file
 
 ➡️ Follow the guide in [youtube_oauth2_setup.md](./youtube_oauth2_setup.md) for a step-by-step walkthrough.
 
+Note: Subtitle upload (captions) requires the `https://www.googleapis.com/auth/youtube.force-ssl` scope. If you previously authenticated without it, delete your saved token and run `authenticate` again to generate a token with the new scope.
+
 ### Usage
 
 - `main.go`: Entry point for the CLI

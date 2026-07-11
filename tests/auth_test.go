@@ -17,6 +17,7 @@ func (s *YumSuite) TestAuthenticate() {
 		"access_type=offline&client_id=1234567890-mockclientid.apps.googleusercontent.com&prompt=consent&"+
 		"redirect_uri=https%3A%2F%2Flocalhost%3A8080&response_type=code&"+
 		"scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube.upload+"+
+		"https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube.force-ssl+"+
 		"https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube.readonly&state=state-token")
 }
 

@@ -30,7 +30,12 @@ func (c *Core) WithSecretFile(secretfile string) error {
 		return fmt.Errorf("failed to read secret file: %w", err)
 	}
 
-	config, err := google.ConfigFromJSON(secrets, youtube.YoutubeUploadScope, youtube.YoutubeReadonlyScope)
+	config, err := google.ConfigFromJSON(
+		secrets,
+		youtube.YoutubeUploadScope,
+		youtube.YoutubeForceSslScope,
+		youtube.YoutubeReadonlyScope,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create OAuth2 config: %w", err)
 	}
