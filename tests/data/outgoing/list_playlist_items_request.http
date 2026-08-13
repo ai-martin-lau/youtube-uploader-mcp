@@ -1,0 +1,1 @@
+GET https://youtube.googleapis.com/youtube/v3/playlistItems?alt=json&maxResults=50&part=id&part=snippet&playlistId=playlist_id_12345&prettyPrint=false&videoId=video_id_12345 HTTP/1.1

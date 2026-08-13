@@ -1,0 +1,23 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "id": "playlist_item_duplicate_1",
+      "snippet": {
+        "playlistId": "playlist_id_12345",
+        "position": 1,
+        "resourceId": {"kind": "youtube#video", "videoId": "video_id_12345"}
+      }
+    },
+    {
+      "id": "playlist_item_duplicate_2",
+      "snippet": {
+        "playlistId": "playlist_id_12345",
+        "position": 2,
+        "resourceId": {"kind": "youtube#video", "videoId": "video_id_12345"}
+      }
+    }
+  ]
+}

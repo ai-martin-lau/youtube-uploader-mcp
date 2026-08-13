@@ -1,0 +1,33 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "id": "video_id_12345",
+      "snippet": {
+        "channelId": "mock-channel-id",
+        "title": "Mock video title",
+        "description": "Mock video description",
+        "tags": ["bass", "play-along"],
+        "categoryId": "10",
+        "defaultLanguage": "en",
+        "defaultAudioLanguage": "en"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "private",
+        "publishAt": "2026-08-15T22:00:00Z",
+        "license": "youtube",
+        "embeddable": true,
+        "publicStatsViewable": true,
+        "madeForKids": false,
+        "selfDeclaredMadeForKids": false,
+        "containsSyntheticMedia": false
+      },
+      "paidProductPlacementDetails": {
+        "hasPaidProductPlacement": false
+      }
+    }
+  ]
+}

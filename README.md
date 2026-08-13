@@ -16,6 +16,7 @@ AI‑powered YouTube uploader—no CLI, no YouTube Studio, and no secrets ever s
 * **Privacy & Scheduling**: Support for public, private, or unlisted statuses, and scheduled publish times.
 * **Post-Upload Configs (`update_video`)**: Add videos to playlists, upload custom thumbnails (<2MB), and attach subtitles.
 * **Safe Metadata Audits and Updates**: Read owner-visible video settings with `get_video` and update supported declarations with a read-merge-write workflow.
+* **Policy Audits (`audit_video`)**: Compare live owner-visible settings, caption tracks, playlist membership, and exact playlist order against explicit expectations without changing YouTube.
 
 ## Single Command Installation
 
@@ -101,7 +102,8 @@ The MCP server registers the following tools:
 5. `upload_video`: Uploads the video file and configures main details (title, description, tags, category, optional language, status, audience declaration, altered/synthetic-media disclosure, subscriber notifications, and scheduled publish).
 6. `update_video`: Decoupled tool that manages post-upload configurations: adds the video to a playlist, uploads a custom thumbnail (must be <2MB), and attaches subtitle/caption tracks.
 7. `get_video`: Reads owner-visible metadata for one video and verifies that it belongs to the selected channel.
-8. `update_video_metadata`: Safely updates supported video declarations after first reading and preserving the video's other writable status fields.
+8. `audit_video`: Performs a read-only policy audit. API-readable checks return `pass` or `fail`; upload-time and Studio-only settings return `unverifiable` rather than a false pass. It can also detect missing or duplicate playlist membership and compare an entire playlist's ordered video IDs.
+9. `update_video_metadata`: Safely updates supported video declarations after first reading and preserving the video's other writable status fields.
 
 Channel-scoped tools verify the OAuth token's live `mine=true` channel before
 continuing. Metadata updates also send the video's current ETag with
@@ -116,6 +118,30 @@ YouTube Data API v3 does not expose reliable write operations for every
 YouTube Studio control. Automatic chapters, automatic places, automatic
 concepts, Shorts remixing, the per-video comment moderation preset, cards, and
 end screens remain manual Studio settings.
+
+### Defaults and automation boundary
+
+The MCP itself defaults a new upload to `private`. Low End Atlas-style
+automation should still explicitly send language, audience declaration,
+altered/synthetic-media declaration, and `notify_subscribers` instead of
+depending on account state. In particular, YouTube's `videos.insert` default
+for `notifySubscribers` is `true`.
+
+Some platform defaults are useful but are not substitutes for a live audit:
+
+* The standard YouTube license is the upload default.
+* Paid product placement is `false` unless declared.
+* Shorts remixing is enabled by default, subject to rights restrictions.
+* Automatic chapters are enabled for new uploads by default, so omission does
+  not satisfy a policy that requires chapters to be off.
+* YouTube Studio upload defaults apply only to browser uploads, not API
+  uploads.
+
+`audit_video` accepts only expectations supplied by the caller. This keeps the
+server reusable while allowing a project manifest or agent workflow to run the
+same checks automatically. For playlist writes, use
+`expected_playlist_contents` with the complete ordered video-ID list before
+deciding whether an insertion may be retried.
 
 ## Contributing
 

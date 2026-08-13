@@ -212,9 +212,7 @@ func (c *Core) getOwnedVideo(
 		)
 	}
 
-	var presence struct {
-		Status map[string]json.RawMessage `json:"status"`
-	}
+	var presence videoFieldPresence
 	if err := json.Unmarshal(payload.Items[0], &presence); err != nil {
 		return nil, fmt.Errorf("failed to inspect video %s status fields: %w", videoID, err)
 	}
@@ -225,13 +223,21 @@ func (c *Core) getOwnedVideo(
 		video:                          &video,
 		selfDeclaredMadeForKidsPresent: selfDeclaredMadeForKidsPresent,
 		containsSyntheticMediaPresent:  containsSyntheticMediaPresent,
+		presence:                       presence,
 	}, nil
+}
+
+type videoFieldPresence struct {
+	Snippet                     map[string]json.RawMessage `json:"snippet"`
+	Status                      map[string]json.RawMessage `json:"status"`
+	PaidProductPlacementDetails map[string]json.RawMessage `json:"paidProductPlacementDetails"`
 }
 
 type ownedVideo struct {
 	video                          *youtube.Video
 	selfDeclaredMadeForKidsPresent bool
 	containsSyntheticMediaPresent  bool
+	presence                       videoFieldPresence
 }
 
 func writableVideoStatus(current *ownedVideo) *youtube.VideoStatus {

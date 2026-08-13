@@ -1,0 +1,31 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "id": "playlist_item_1",
+      "snippet": {
+        "playlistId": "playlist_id_12345",
+        "position": 0,
+        "resourceId": {"kind": "youtube#video", "videoId": "video_id_00001"}
+      }
+    },
+    {
+      "id": "playlist_item_2",
+      "snippet": {
+        "playlistId": "playlist_id_12345",
+        "position": 1,
+        "resourceId": {"kind": "youtube#video", "videoId": "video_id_00002"}
+      }
+    },
+    {
+      "id": "playlist_item_id_12345",
+      "snippet": {
+        "playlistId": "playlist_id_12345",
+        "position": 2,
+        "resourceId": {"kind": "youtube#video", "videoId": "video_id_12345"}
+      }
+    }
+  ]
+}
