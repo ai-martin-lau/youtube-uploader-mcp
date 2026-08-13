@@ -21,7 +21,7 @@ func Build(ctx context.Context, clientSecretFile string, workingDir string) (*se
 
 	s := server.NewMCPServer(
 		"Youtube Uploader MCP",
-		"0.1.2",
+		"0.3.0",
 		server.WithToolCapabilities(true),
 		server.WithHooks(hook.New().Define()),
 		server.WithLogging(),
@@ -33,6 +33,8 @@ func Build(ctx context.Context, clientSecretFile string, workingDir string) (*se
 		&tool.GetChannelsTool{Core: c},
 		&tool.RefreshTokenTool{Core: c},
 		&tool.UploadVideoTool{Core: c},
+		&tool.GetVideoTool{Core: c},
+		&tool.UpdateVideoMetadataTool{Core: c},
 		&tool.UpdateVideoTool{Core: c},
 	}
 	for _, t := range tools {

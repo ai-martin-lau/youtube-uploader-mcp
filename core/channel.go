@@ -26,6 +26,46 @@ func (c *Channel) Mask() {
 
 type Channels map[string]*Channel
 
+// VerifyTokenChannel resolves the channel selected by the OAuth token and
+// rejects ambiguous or mismatched bindings before any channel-scoped action.
+func (c *Core) VerifyTokenChannel(
+	ctx context.Context,
+	expectedChannelID string,
+	token *oauth2.Token,
+) error {
+	if expectedChannelID == "" {
+		return fmt.Errorf("expected channel ID must be provided")
+	}
+	if token == nil {
+		return fmt.Errorf("token must be provided")
+	}
+
+	service, err := c.Service(ctx, token)
+	if err != nil {
+		return fmt.Errorf("failed to create YouTube service: %w", err)
+	}
+	response, err := service.Channels.List([]string{"id"}).Mine(true).Do()
+	if err != nil {
+		return fmt.Errorf("failed to verify token channel: %w", err)
+	}
+	if len(response.Items) == 0 {
+		return fmt.Errorf("no channel found for token")
+	}
+	if len(response.Items) != 1 {
+		return fmt.Errorf("token resolved to %d channels; expected exactly one", len(response.Items))
+	}
+	actualChannelID := response.Items[0].Id
+	if actualChannelID != expectedChannelID {
+		return fmt.Errorf(
+			"authenticated token is bound to channel %s, not requested channel %s",
+			actualChannelID,
+			expectedChannelID,
+		)
+	}
+
+	return nil
+}
+
 func (c *Core) GetChannelForToken(token *oauth2.Token) (*Channel, error) {
 	ctx := context.Background()
 

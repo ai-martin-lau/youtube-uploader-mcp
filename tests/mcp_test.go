@@ -28,11 +28,11 @@ func (s *YumSuite) TestListTools() {
 	s.IsType(mcp.ListToolsResult{}, resp.Result)
 	result := resp.Result.(mcp.ListToolsResult)
 
-	s.Len(result.Tools, 6)
+	s.Len(result.Tools, 8)
 	toolsName := []string{}
 	for _, tool := range result.Tools {
 		toolsName = append(toolsName, tool.Name)
 	}
 
-	s.Equal([]string{"accesstoken", "authenticate", "channels", "refreshtoken", "update_video", "upload_video"}, toolsName)
+	s.Equal([]string{"accesstoken", "authenticate", "channels", "get_video", "refreshtoken", "update_video", "update_video_metadata", "upload_video"}, toolsName)
 }

@@ -1,0 +1,16 @@
+HTTP/1.1 412 Precondition Failed
+Content-Type: application/json
+
+{
+  "error": {
+    "code": 412,
+    "message": "Precondition check failed.",
+    "errors": [
+      {
+        "message": "Precondition check failed.",
+        "domain": "global",
+        "reason": "conditionNotMet"
+      }
+    ]
+  }
+}

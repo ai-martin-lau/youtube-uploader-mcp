@@ -12,9 +12,10 @@ AI‑powered YouTube uploader—no CLI, no YouTube Studio, and no secrets ever s
 * **Direct Uploads**: Upload videos to YouTube from Claude, Cursor, VS Code, or any other MCP client.
 * **AI-Assisted Metadata**: Automatically generate titles, descriptions, and tags via your MCP client.
 * **OAuth2 Authentication**: Secure local login, multi-channel support, and auto-refreshing.
-* **Metadata & Settings**: Category tags, optional language settings, and explicit metadata control.
+* **Metadata & Settings**: Category tags, optional language settings, explicit audience and altered/synthetic-media declarations, and subscriber-notification control.
 * **Privacy & Scheduling**: Support for public, private, or unlisted statuses, and scheduled publish times.
 * **Post-Upload Configs (`update_video`)**: Add videos to playlists, upload custom thumbnails (<2MB), and attach subtitles.
+* **Safe Metadata Audits and Updates**: Read owner-visible video settings with `get_video` and update supported declarations with a read-merge-write workflow.
 
 ## Single Command Installation
 
@@ -97,8 +98,24 @@ The MCP server registers the following tools:
 2. `accesstoken`: Exchanges the code for user credentials and channel info.
 3. `channels`: Retrieves authenticated channels.
 4. `refreshtoken`: Force-refreshes tokens.
-5. `upload_video`: Uploads the video file and configures main details (title, description, tags, category, optional language, status, kids' flags, scheduled publish).
+5. `upload_video`: Uploads the video file and configures main details (title, description, tags, category, optional language, status, audience declaration, altered/synthetic-media disclosure, subscriber notifications, and scheduled publish).
 6. `update_video`: Decoupled tool that manages post-upload configurations: adds the video to a playlist, uploads a custom thumbnail (must be <2MB), and attaches subtitle/caption tracks.
+7. `get_video`: Reads owner-visible metadata for one video and verifies that it belongs to the selected channel.
+8. `update_video_metadata`: Safely updates supported video declarations after first reading and preserving the video's other writable status fields.
+
+Channel-scoped tools verify the OAuth token's live `mine=true` channel before
+continuing. Metadata updates also send the video's current ETag with
+`If-Match`, so a concurrent Studio edit aborts the update instead of being
+silently overwritten.
+
+`made_for_kids`, `contains_synthetic_media`, and `notify_subscribers` are
+optional booleans. Omission preserves YouTube's default behavior; an explicit
+`false` is sent as an explicit declaration.
+
+YouTube Data API v3 does not expose reliable write operations for every
+YouTube Studio control. Automatic chapters, automatic places, automatic
+concepts, Shorts remixing, the per-video comment moderation preset, cards, and
+end screens remain manual Studio settings.
 
 ## Contributing
 

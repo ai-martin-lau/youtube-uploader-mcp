@@ -1,0 +1,22 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "id": "video_id_12345",
+      "snippet": {
+        "channelId": "other-channel-id",
+        "title": "Someone else's video",
+        "description": "Not owned by the requested channel",
+        "categoryId": "10"
+      },
+      "status": {
+        "privacyStatus": "public",
+        "license": "youtube",
+        "embeddable": true,
+        "publicStatsViewable": true
+      }
+    }
+  ]
+}

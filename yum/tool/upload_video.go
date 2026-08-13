@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/anwerj/youtube-uploader-mcp/core"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -56,9 +55,27 @@ func (t *UploadVideoTool) Define(context.Context) mcp.Tool {
 			mcp.Description("The date and time when the video is scheduled to publish. It can be set only if the privacy status of the video is private. The value is specified in ISO 8601 format (YYYY-MM-DDThh:mm:ss.sZ)."),
 		),
 		mcp.WithBoolean("made_for_kids",
-			mcp.Description("Whether the video is made exclusively for kids. Default is false"),
+			mcp.Description("Optional owner declaration that the video is made for kids. Omit this field to leave the declaration unspecified."),
+		),
+		mcp.WithBoolean("contains_synthetic_media",
+			mcp.Description("Optional declaration that the video contains realistic altered or synthetic media. Omit this field to leave the declaration unspecified."),
+		),
+		mcp.WithBoolean("notify_subscribers",
+			mcp.Description("Optional control for publishing the upload to subscribers' feeds and sending notifications. YouTube defaults to true when this field is omitted."),
 		),
 	)
+}
+
+func optionalBool(request mcp.CallToolRequest, key string) (*bool, error) {
+	if _, ok := request.GetArguments()[key]; !ok {
+		return nil, nil
+	}
+
+	value, err := request.RequireBool(key)
+	if err != nil {
+		return nil, err
+	}
+	return &value, nil
 }
 
 func (t *UploadVideoTool) Handle(
@@ -83,7 +100,18 @@ func (t *UploadVideoTool) Handle(
 	if status != "public" && status != "private" && status != "unlisted" {
 		return mcp.NewToolResultError("status must be one of: public, private, unlisted"), nil
 	}
-	madeForKids := request.GetBool("made_for_kids", false)
+	madeForKids, err := optionalBool(request, "made_for_kids")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+	containsSyntheticMedia, err := optionalBool(request, "contains_synthetic_media")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+	notifySubscribers, err := optionalBool(request, "notify_subscribers")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
 	videoLanguage := request.GetString("video_language", "")
 
 	// Fail-fast validation of the video file path
@@ -98,52 +126,25 @@ func (t *UploadVideoTool) Handle(
 		return mcp.NewToolResultError("video file path is a directory: " + filePath), nil
 	}
 
-	channel, err := t.Core.GetChannelByID(channelId)
+	token, err := validChannelToken(ctx, t.Core, channelId)
 	if err != nil {
-		return mcp.NewToolResultError("Failed to load token: " + err.Error()), nil
-	}
-
-	if channel == nil ||
-		channel.Token == nil {
-		return mcp.NewToolResultError("channel or token is nil, please authenticate first"), nil
-	}
-
-	if channel.Token.Expiry.IsZero() ||
-		channel.Token.AccessToken == "" ||
-		channel.Token.RefreshToken == "" {
-		return mcp.NewToolResultError(
-			"channel token is expired or malformed, please start authenticate"), nil
-	}
-
-	// Check if token is expiring (within 2 minutes)
-	now := time.Now().In(channel.Token.Expiry.Location())
-	if channel.Token.Expiry.Before(now.Add(2 * time.Minute)) {
-		newToken, err := t.Core.RefreshAccessToken(channel.Token)
-		if err != nil {
-			return mcp.NewToolResultError(
-				"token was expiring, Failed to refresh token: " + err.Error()), nil
-		}
-		channel.Token = newToken
-		// Optionally save the refreshed token for future use
-		err = t.Core.SaveChannel(channel)
-		if err != nil {
-			return mcp.NewToolResultError(
-				"token was expiring, Failed to save refreshed token: " + err.Error()), nil
-		}
+		return mcp.NewToolResultError(err.Error()), nil
 	}
 
 	video := &core.Video{
-		Path:          filePath,
-		Title:         title,
-		Description:   description,
-		Tags:          strings.Split(tags, ","),
-		CategoryID:    categoryID,
-		Language:      videoLanguage,
-		PrivacyStatus: status,
-		MadeForKids:   madeForKids,
-		PublishAt:     request.GetString("publish_at", ""),
+		Path:                   filePath,
+		Title:                  title,
+		Description:            description,
+		Tags:                   strings.Split(tags, ","),
+		CategoryID:             categoryID,
+		Language:               videoLanguage,
+		PrivacyStatus:          status,
+		MadeForKids:            madeForKids,
+		ContainsSyntheticMedia: containsSyntheticMedia,
+		NotifySubscribers:      notifySubscribers,
+		PublishAt:              request.GetString("publish_at", ""),
 	}
-	id, err := t.Core.UploadVideo(ctx, video, channel.Token)
+	id, err := t.Core.UploadVideo(ctx, video, token)
 	if err != nil {
 		return mcp.NewToolResultError("Failed to upload video: " + err.Error()), nil
 	}

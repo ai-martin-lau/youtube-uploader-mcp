@@ -10,16 +10,18 @@ import (
 )
 
 type Video struct {
-	ID            string   `json:"id"`
-	Path          string   `json:"path"`
-	Title         string   `json:"title"`
-	Description   string   `json:"description"`
-	Tags          []string `json:"tags"`
-	CategoryID    string   `json:"category_id"`
-	Language      string   `json:"language"`
-	PrivacyStatus string   `json:"privacy_status"`
-	MadeForKids   bool     `json:"made_for_kids"`
-	PublishAt     string   `json:"publish_at,omitempty"`
+	ID                     string   `json:"id"`
+	Path                   string   `json:"path"`
+	Title                  string   `json:"title"`
+	Description            string   `json:"description"`
+	Tags                   []string `json:"tags"`
+	CategoryID             string   `json:"category_id"`
+	Language               string   `json:"language"`
+	PrivacyStatus          string   `json:"privacy_status"`
+	MadeForKids            *bool    `json:"made_for_kids,omitempty"`
+	ContainsSyntheticMedia *bool    `json:"contains_synthetic_media,omitempty"`
+	NotifySubscribers      *bool    `json:"notify_subscribers,omitempty"`
+	PublishAt              string   `json:"publish_at,omitempty"`
 }
 
 func (v *Video) toUpload() (*youtube.Video, error) {
@@ -44,13 +46,22 @@ func (v *Video) toUpload() (*youtube.Video, error) {
 		snippet.DefaultAudioLanguage = v.Language
 	}
 
+	status := &youtube.VideoStatus{
+		PrivacyStatus: privacy,
+		PublishAt:     v.PublishAt,
+	}
+	if v.MadeForKids != nil {
+		status.SelfDeclaredMadeForKids = *v.MadeForKids
+		status.ForceSendFields = append(status.ForceSendFields, "SelfDeclaredMadeForKids")
+	}
+	if v.ContainsSyntheticMedia != nil {
+		status.ContainsSyntheticMedia = *v.ContainsSyntheticMedia
+		status.ForceSendFields = append(status.ForceSendFields, "ContainsSyntheticMedia")
+	}
+
 	upload := &youtube.Video{
 		Snippet: snippet,
-		Status: &youtube.VideoStatus{
-			PrivacyStatus: privacy,
-			MadeForKids:   v.MadeForKids,
-			PublishAt:     v.PublishAt,
-		},
+		Status:  status,
 	}
 
 	return upload, nil
@@ -74,8 +85,15 @@ func (c *Core) UploadVideo(ctx context.Context, video *Video, token *oauth2.Toke
 	if err != nil {
 		return "", fmt.Errorf("failed to convert video to upload format: %w", err)
 	}
+	// Keep the returned DTO aligned with the effective request. Scheduled
+	// uploads are always sent as private even if the caller requested another
+	// initial privacy status.
+	video.PrivacyStatus = upload.Status.PrivacyStatus
 
 	call := service.Videos.Insert([]string{"snippet", "status"}, upload)
+	if video.NotifySubscribers != nil {
+		call = call.NotifySubscribers(*video.NotifySubscribers)
+	}
 	resp, err := call.Media(file).Do()
 	if err != nil {
 		return "", fmt.Errorf("failed to upload video: %w", err)

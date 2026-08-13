@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/anwerj/youtube-uploader-mcp/core"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -46,11 +45,11 @@ func (t *UpdateVideoTool) Define(context.Context) mcp.Tool {
 }
 
 type UpdateVideoResult struct {
-	VideoID          string            `json:"video_id"`
-	PlaylistStatus   string            `json:"playlist_status,omitempty"`
-	SubtitlesStatus  string            `json:"subtitles_status,omitempty"`
-	ThumbnailStatus  string            `json:"thumbnail_status,omitempty"`
-	Errors           map[string]string `json:"errors,omitempty"`
+	VideoID         string            `json:"video_id"`
+	PlaylistStatus  string            `json:"playlist_status,omitempty"`
+	SubtitlesStatus string            `json:"subtitles_status,omitempty"`
+	ThumbnailStatus string            `json:"thumbnail_status,omitempty"`
+	Errors          map[string]string `json:"errors,omitempty"`
 }
 
 func (t *UpdateVideoTool) Handle(
@@ -103,32 +102,10 @@ func (t *UpdateVideoTool) Handle(
 		}
 	}
 
-	// 2. Token authorization
-	channel, err := t.Core.GetChannelByID(channelId)
+	// 2. Token authorization and live channel binding verification
+	token, err := validChannelToken(ctx, t.Core, channelId)
 	if err != nil {
-		return mcp.NewToolResultError("Failed to load token: " + err.Error()), nil
-	}
-
-	if channel == nil || channel.Token == nil {
-		return mcp.NewToolResultError("channel or token is nil, please authenticate first"), nil
-	}
-
-	if channel.Token.Expiry.IsZero() || channel.Token.AccessToken == "" || channel.Token.RefreshToken == "" {
-		return mcp.NewToolResultError("channel token is expired or malformed, please authenticate again"), nil
-	}
-
-	// Check if token is expiring (within 2 minutes) and refresh it if necessary
-	now := time.Now().In(channel.Token.Expiry.Location())
-	if channel.Token.Expiry.Before(now.Add(2 * time.Minute)) {
-		newToken, err := t.Core.RefreshAccessToken(channel.Token)
-		if err != nil {
-			return mcp.NewToolResultError("token was expiring, failed to refresh: " + err.Error()), nil
-		}
-		channel.Token = newToken
-		err = t.Core.SaveChannel(channel)
-		if err != nil {
-			return mcp.NewToolResultError("token was expiring, failed to save refreshed token: " + err.Error()), nil
-		}
+		return mcp.NewToolResultError(err.Error()), nil
 	}
 
 	// 3. Process actions
@@ -138,7 +115,7 @@ func (t *UpdateVideoTool) Handle(
 	}
 
 	if playlistID != "" {
-		if err := t.Core.AddVideoToPlaylist(ctx, playlistID, videoId, channel.Token); err != nil {
+		if err := t.Core.AddVideoToPlaylist(ctx, playlistID, videoId, token); err != nil {
 			result.PlaylistStatus = "failed"
 			result.Errors["playlist"] = err.Error()
 		} else {
@@ -147,7 +124,7 @@ func (t *UpdateVideoTool) Handle(
 	}
 
 	if subtitlePath != "" {
-		if err := t.Core.AddSubtitles(ctx, videoId, subtitlePath, subtitleLanguage, channel.Token); err != nil {
+		if err := t.Core.AddSubtitles(ctx, videoId, subtitlePath, subtitleLanguage, token); err != nil {
 			result.SubtitlesStatus = "failed"
 			result.Errors["subtitles"] = err.Error()
 		} else {
@@ -156,7 +133,7 @@ func (t *UpdateVideoTool) Handle(
 	}
 
 	if thumbnailPath != "" {
-		if err := t.Core.SetThumbnail(ctx, videoId, thumbnailPath, channel.Token); err != nil {
+		if err := t.Core.SetThumbnail(ctx, videoId, thumbnailPath, token); err != nil {
 			result.ThumbnailStatus = "failed"
 			result.Errors["thumbnail"] = err.Error()
 		} else {

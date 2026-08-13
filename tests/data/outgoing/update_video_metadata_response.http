@@ -1,0 +1,16 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "id": "video_id_12345",
+  "status": {
+    "uploadStatus": "processed",
+    "privacyStatus": "private",
+    "publishAt": "2026-08-15T22:00:00Z",
+    "license": "youtube",
+    "embeddable": true,
+    "publicStatsViewable": false,
+    "selfDeclaredMadeForKids": false,
+    "containsSyntheticMedia": false
+  }
+}
