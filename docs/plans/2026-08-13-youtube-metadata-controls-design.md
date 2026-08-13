@@ -78,9 +78,10 @@ automation.
 
 ## Release and repository plan
 
-- Preserve the upstream Git history and publish the changes from a feature
-  branch in the public `ai-martin-lau/youtube-uploader-mcp` fork.
+- Preserve the existing Git history and maintain the project as the standalone
+  public repository `ai-martin-lau/youtube-uploader-mcp`, with verified changes
+  released directly from `main`.
 - Keep the project-local installed binary pinned and checksummed.
 - Replace the installed binary only after tests and a reproducible build pass.
-- Record the fork commit and local binary checksum in the Low End Atlas MCP
+- Record the source commit and local binary checksum in the Low End Atlas MCP
   installation notes.
