@@ -117,7 +117,10 @@ optional booleans. Omission preserves YouTube's default behavior; an explicit
 YouTube Data API v3 does not expose reliable write operations for every
 YouTube Studio control. Automatic chapters, automatic places, automatic
 concepts, Shorts remixing, the per-video comment moderation preset, cards, and
-end screens remain manual Studio settings.
+end screens remain outside this MCP. A caller may use a separately authorized
+YouTube Studio automation workflow for those controls, but must verify the
+saved UI state independently; this MCP continues to report them as
+`unverifiable`.
 
 ### Defaults and automation boundary
 
