@@ -1,151 +1,185 @@
-<p align="center"> <img src="https://github.com/user-attachments/assets/21a9baa2-06e8-4af4-9bcd-1dbce52a2733"/> </p>
-
+[English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Español](README_ES.md)
 
 # YouTube Uploader MCP
-[![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/anwerj/youtube-uploader-mcp)](https://archestra.ai/mcp-catalog/anwerj__youtube-uploader-mcp)
-[![Tests](https://github.com/anwerj/youtube-uploader-mcp/actions/workflows/tests.yaml/badge.svg)](https://github.com/anwerj/youtube-uploader-mcp/actions/workflows/tests.yaml)
 
-AI‑powered YouTube uploader—no CLI, no YouTube Studio, and no secrets ever shared with LLMs or third‑party apps and all free of cost! It includes OAuth2 authentication, token management, and video upload functionality.
+A local MCP server for uploading, inspecting, auditing, and completing supported post-upload actions on YouTube through the YouTube Data API v3.
 
-## Features
+It gives MCP clients a channel-bound workflow for OAuth, private-first uploads, scheduling, thumbnails, captions, playlist insertion, and API-readable verification. Metadata can be prepared by the MCP client, but this server only sends the values it receives.
 
-* **Direct Uploads**: Upload videos to YouTube from Claude, Cursor, VS Code, or any other MCP client.
-* **AI-Assisted Metadata**: Automatically generate titles, descriptions, and tags via your MCP client.
-* **OAuth2 Authentication**: Secure local login, multi-channel support, and auto-refreshing.
-* **Metadata & Settings**: Category tags, optional language settings, explicit audience and altered/synthetic-media declarations, and subscriber-notification control.
-* **Privacy & Scheduling**: Support for public, private, or unlisted statuses, and scheduled publish times.
-* **Post-Upload Configs (`update_video`)**: Add videos to playlists, upload custom thumbnails (<2MB), and attach subtitles.
-* **Safe Metadata Audits and Updates**: Read owner-visible video settings with `get_video` and update supported declarations with a read-merge-write workflow.
-* **Policy Audits (`audit_video`)**: Compare live owner-visible settings, caption tracks, playlist membership, and exact playlist order against explicit expectations without changing YouTube.
+> [!IMPORTANT]
+> This README documents the current `main` branch, which registers nine tools. The latest tagged release is older, and the bundled install scripts still target the upstream repository. Build from source to use the features documented here.
 
-## Single Command Installation
+## What it does
 
-### For Mac and Linux
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/anwerj/youtube-uploader-mcp/master/scripts/install.sh)"
-```
+- Authenticates YouTube channels locally with OAuth 2.0 and supports multiple cached channels.
+- Verifies the live OAuth channel before channel-scoped operations.
+- Uploads videos with title, description, tags, category, language, privacy, schedule, audience, synthetic-media, and subscriber-notification inputs.
+- Defaults new uploads to `private` unless another valid status is explicitly supplied.
+- Adds an uploaded video to a playlist, uploads a thumbnail under 2 MiB, and inserts a caption track.
+- Reads owner-visible video metadata with `get_video`.
+- Runs read-only, expectation-driven checks with `audit_video`, including caption resources and exact playlist membership or order.
+- Safely updates the supported audience and synthetic-media declarations with ETag conflict protection.
 
+## Requirements
 
-### For Windows(Powershell)
-```Powershell
-Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/anwerj/youtube-uploader-mcp/master/scripts/install.ps1" -OutFile "$env:TEMP\install.ps1"; PowerShell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install.ps1"
-```
-### Expected result
+- Go `1.24.4` or newer.
+- A Google Cloud project with the YouTube Data API v3 enabled.
+- A Google OAuth desktop client JSON file.
+- Your Google account added as a test user while the OAuth app is in testing.
+- YouTube API quota for the operations you run.
+- An MCP client that supports local stdio servers.
 
-This single command will
+See [youtube_oauth2_setup.md](youtube_oauth2_setup.md) for the Google Cloud setup walkthrough.
 
-1. Help in downloading oAuth client secret files, if not downloaded,
-2. Download the MCP server,
-3. Set minimum required permission to run mcp server,
-4. Auto update **Cluade Desktop config** with youtube-uploader-mcp server and
-5. At last print exact MCP config for any other clients **VS Code/Cursor/AnythingLLM etc**.
-
-## Demo
-### Setup and Demo Video
-<p align="center"> <a href="https://youtu.be/fcywz5FIUpM" target="_blank"><img src="https://img.youtube.com/vi/fcywz5FIUpM/0.jpg"/></a> </p>
-
-![output](https://github.com/user-attachments/assets/f8c2c303-ef77-4fa9-99a6-5de7f120ffac)
-
-## Manual Installation
-Please check [Single Command Installation](#single-command-installation), proceed if you prefer manual installation.
-
-Visit the [Releases](https://github.com/anwerj/youtube-uploader-mcp/releases) page and download the appropriate binary for your operating system:
-
-- `youtube-uploader-mcp-linux-amd64`
-- `youtube-uploader-mcp-darwin-arm64`
-- `youtube-uploader-mcp-windows-amd64.exe`
-- etc.
-
-> You can use the latest versioned tag, e.g., `v1.0.0`.
-
----
-
-### 2. Make it Executable (Linux/macOS)
+## Build from source
 
 ```bash
-chmod +x path/to/youtube-uploader-mcp-<os>-<arch>
+git clone https://github.com/ai-martin-lau/youtube-uploader-mcp.git
+cd youtube-uploader-mcp
+go mod download
+go build -trimpath -o youtube-uploader-mcp .
 ```
 
-### 3. Configure MCP (e.g., in Claude Desktop or Cursor)
+Create private directories for the token cache and logs, and keep the OAuth client file private:
+
+```bash
+mkdir -p /absolute/path/private-state /absolute/path/private-logs
+chmod 700 /absolute/path/private-state /absolute/path/private-logs
+chmod 600 /absolute/path/client_secret.json
+```
+
+## Configure your MCP client
+
+Use absolute paths. The configuration format may be named differently by your MCP client, but the server entry is the same:
+
 ```json
 {
   "mcpServers": {
     "youtube-uploader-mcp": {
-      "command": "/absolute/path/to/youtube-uploader-mcp-<os>-<arch>",
+      "command": "/absolute/path/youtube-uploader-mcp",
       "args": [
         "-client_secret_file",
-        "/absolute/path/to/client_secret.json(See Below)"
-      ]
+        "/absolute/path/client_secret.json",
+        "-working_dir",
+        "/absolute/path/private-state"
+      ],
+      "env": {
+        "YOUTUBE_UPLOADER_MCP_LOG_DIR": "/absolute/path/private-logs"
+      }
     }
   }
 }
 ```
-### 4. Set Up Google OAuth 2.0
-To upload to YouTube, you must configure OAuth and get a client_secret.json file from the Google Developer Console.
 
-➡️ Follow the guide in [youtube_oauth2_setup.md](./youtube_oauth2_setup.md) for a step-by-step walkthrough.
+Restart the MCP client after saving its configuration.
 
-> [!WARNING]
-> **Important: Sensitive OAuth Scope & Re-Authentication**:
-> Subtitle/caption upload relies on the `https://www.googleapis.com/auth/youtube.force-ssl` scope, which is required by the YouTube Data API to perform caption write operations. 
-> * **Existing Users**: If you authenticated with an older version of this MCP, your saved token will lack this scope. Any calls attempting to upload subtitles will fail with a `403 Forbidden` API error. 
-> * **How to Update**: You must delete the channel cache file (usually `.youtube_uploader_channels_cache` in your working directory) and rerun the `authenticate` tool to grant the new permissions.
-> * **Google Console Warning**: Adding this sensitive scope will trigger a warning screen in Google Cloud Console. Since this is for your personal use, you can safely proceed past the "unverified app" warnings.
+## How to use
 
-### Usage & Tool Orchestration
+### 1. Connect a channel
 
-The MCP server registers the following tools:
-1. `authenticate`: Generates the OAuth2 URL for authentication.
-2. `accesstoken`: Exchanges the code for user credentials and channel info.
-3. `channels`: Retrieves authenticated channels.
-4. `refreshtoken`: Force-refreshes tokens.
-5. `upload_video`: Uploads the video file and configures main details (title, description, tags, category, optional language, status, audience declaration, altered/synthetic-media disclosure, subscriber notifications, and scheduled publish).
-6. `update_video`: Decoupled tool that manages post-upload configurations: adds the video to a playlist, uploads a custom thumbnail (must be <2MB), and attaches subtitle/caption tracks.
-7. `get_video`: Reads owner-visible metadata for one video and verifies that it belongs to the selected channel.
-8. `audit_video`: Performs a read-only policy audit. API-readable checks return `pass` or `fail`; upload-time and Studio-only settings return `unverifiable` rather than a false pass. It can also detect missing or duplicate playlist membership and compare an entire playlist's ordered video IDs.
-9. `update_video_metadata`: Safely updates supported video declarations after first reading and preserving the video's other writable status fields.
+Ask your MCP client:
 
-Channel-scoped tools verify the OAuth token's live `mine=true` channel before
-continuing. Metadata updates also send the video's current ETag with
-`If-Match`, so a concurrent Studio edit aborts the update instead of being
-silently overwritten.
+```text
+Start YouTube authentication. Use the redirect URI configured in my Google OAuth client.
+```
 
-`made_for_kids`, `contains_synthetic_media`, and `notify_subscribers` are
-optional booleans. Omission preserves YouTube's default behavior; an explicit
-`false` is sent as an explicit declaration.
+The client should call `authenticate` and return a Google authorization URL. Complete the Google consent flow, then give the one-time `code` query parameter from the localhost redirect URL to the local `accesstoken` tool. Treat that code as sensitive.
 
-YouTube Data API v3 does not expose reliable write operations for every
-YouTube Studio control. Automatic chapters, automatic places, automatic
-concepts, Shorts remixing, the per-video comment moderation preset, cards, and
-end screens remain outside this MCP. A caller may use a separately authorized
-YouTube Studio automation workflow for those controls, but must verify the
-saved UI state independently; this MCP continues to report them as
-`unverifiable`.
+Next, verify the locally cached channel:
 
-### Defaults and automation boundary
+```text
+List my authenticated YouTube channels and show the exact channel ID.
+```
 
-The MCP itself defaults a new upload to `private`. Low End Atlas-style
-automation should still explicitly send language, audience declaration,
-altered/synthetic-media declaration, and `notify_subscribers` instead of
-depending on account state. In particular, YouTube's `videos.insert` default
-for `notifySubscribers` is `true`.
+### 2. Upload privately
 
-Some platform defaults are useful but are not substitutes for a live audit:
+```text
+Upload /absolute/path/night-drive.mp4 to channel UCxxxxxxxx as private.
 
-* The standard YouTube license is the upload default.
-* Paid product placement is `false` unless declared.
-* Shorts remixing is enabled by default, subject to rights restrictions.
-* Automatic chapters are enabled for new uploads by default, so omission does
-  not satisfy a policy that requires chapters to be off.
-* YouTube Studio upload defaults apply only to browser uploads, not API
-  uploads.
+Title: Night Drive Practice
+Description: An original bass practice video.
+Tags: practice,bass,original
+Category ID: 10
+Language: en
+Made for kids: false
+Contains synthetic media: false
+Notify subscribers: false
 
-`audit_video` accepts only expectations supplied by the caller. This keeps the
-server reusable while allowing a project manifest or agent workflow to run the
-same checks automatically. For playlist writes, use
-`expected_playlist_contents` with the complete ordered video-ID list before
-deciding whether an insertion may be retried.
+Do not publish it or add it to a playlist yet. Return the YouTube video ID and the values actually submitted.
+```
+
+Keep the returned video ID. To schedule a video, provide an RFC 3339 `publish_at` value in the original `upload_video` request; scheduled uploads are submitted as private until YouTube publishes them.
+
+### 3. Verify before post-upload actions
+
+```text
+Read video VIDEO_ID from channel UCxxxxxxxx. Confirm the owner channel, privacy status, title, category, language, audience declaration, and synthetic-media declaration. Do not change anything.
+```
+
+For an expectation-based check:
+
+```text
+Audit video VIDEO_ID on channel UCxxxxxxxx. Expect private visibility, category 10, language en, made for kids false, and synthetic media false. Do not modify the video.
+```
+
+### 4. Complete supported post-upload actions
+
+```text
+For video VIDEO_ID on channel UCxxxxxxxx:
+- upload thumbnail /absolute/path/thumbnail.jpg
+- add it to playlist PLAYLIST_ID
+- upload /absolute/path/captions.srt as English captions
+
+Report each action separately. If playlist insertion times out, audit the live playlist before retrying.
+```
+
+`update_video` can partially succeed. Always inspect the result for each requested action.
+
+## Tool reference
+
+| Tool | Purpose |
+| --- | --- |
+| `authenticate` | Creates the Google OAuth authorization URL. |
+| `accesstoken` | Exchanges the one-time authorization code, verifies the live channel, and caches the token locally. |
+| `channels` | Lists channels found in the local token cache. It is not a live YouTube channel search. |
+| `refreshtoken` | Manually refreshes the cached token for one channel. Channel-scoped tools also refresh near-expiry tokens automatically. |
+| `upload_video` | Uploads a local video and sends the supplied metadata, declarations, privacy status, schedule, and notification choice. |
+| `get_video` | Reads API-visible metadata for an owner-visible video and verifies its channel ownership. |
+| `audit_video` | Compares live API-readable values against caller-supplied expectations without changing YouTube. |
+| `update_video_metadata` | Updates `self_declared_made_for_kids` and/or `contains_synthetic_media` using read-merge-write and ETag protection. |
+| `update_video` | Inserts the video into a playlist, uploads a thumbnail, and/or inserts a caption track. |
+
+## Defaults and important boundaries
+
+- `upload_video` defaults to `private`.
+- `publish_at` must be RFC 3339; scheduled videos are uploaded as private.
+- `tags` is a comma-separated string.
+- The thumbnail file must be smaller than 2 MiB.
+- `made_for_kids`, `contains_synthetic_media`, and `notify_subscribers` are optional booleans. An explicit `false` is sent as `false`.
+- YouTube does not expose `notify_subscribers` for later readback. A successful upload confirms that the request was accepted, but a later audit cannot prove that individual value and reports it as `unverifiable`.
+- Playlist insertion is not idempotent. After an error or timeout, inspect or audit the live playlist before retrying to avoid duplicates.
+- Caption insertion is supported; caption deletion and replacement are not.
+- Playlist creation, item removal, reordering, playlist covers, and playlist language are not supported.
+- Post-upload changes to title, description, tags, category, language, privacy, schedule, and most other fields are not currently exposed by this server.
+- YouTube Studio-only controls such as automatic chapters, automatic places or concepts, Shorts remixing, comment moderation presets, cards, end screens, and caption certification cannot be reliably read or changed through this MCP. `audit_video` reports such expectations as `unverifiable` instead of claiming success.
+
+## Security and privacy
+
+- Use only a Google OAuth app that you control.
+- The server requests `youtube.upload`, `youtube.readonly`, and the sensitive `youtube.force-ssl` scope. The last scope is required for caption uploads.
+- Access and refresh tokens are cached locally in `<working_dir>/.youtube_uploader_channels_cache` with restricted file permissions and are masked in tool output.
+- The one-time OAuth authorization code passes through the MCP client. Current request logging can record it, so keep the log directory private, never share logs, and delete old logs when they are no longer needed.
+- Never commit `client_secret.json`, the channel cache, or MCP logs.
+- The current OAuth implementation uses a fixed state value and does not use PKCE. Run it only on a trusted local machine and avoid concurrent or unsolicited authorization flows.
+
+## Project origin
+
+This project is based on [anwerj/youtube-uploader-mcp](https://github.com/anwerj/youtube-uploader-mcp) and remains available under the MIT License. This repository keeps the original copyright notice while extending the server with channel-bound verification, explicit upload declarations, owner-visible reads, read-only policy audits, and conflict-aware metadata updates.
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) to contribute.
+Issues and focused pull requests are welcome. Please describe the YouTube API behavior being changed, keep unrelated refactors out of the patch, and add or update tests when behavior changes.
+
+## License
+
+[MIT](LICENSE)
