@@ -1,5 +1,7 @@
 [English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Español](README_ES.md)
 
+![YouTube Uploader MCP](assets/repository-cover.png)
+
 # YouTube Uploader MCP
 
 Un servidor MCP local para subir, consultar y auditar vídeos, además de completar las acciones posteriores a la subida compatibles con YouTube mediante YouTube Data API v3.

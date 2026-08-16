@@ -1,5 +1,7 @@
 [English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Español](README_ES.md)
 
+![YouTube Uploader MCP](assets/repository-cover.png)
+
 # YouTube Uploader MCP
 
 YouTube Data API v3를 통해 YouTube 동영상을 업로드하고, 조회하고, 감사하며, 지원되는 업로드 후 작업을 수행하는 로컬 MCP 서버입니다.

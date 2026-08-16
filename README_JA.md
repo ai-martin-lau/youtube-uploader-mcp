@@ -1,5 +1,7 @@
 [English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Español](README_ES.md)
 
+![YouTube Uploader MCP](assets/repository-cover.png)
+
 # YouTube Uploader MCP
 
 YouTube Data API v3 を通じて、YouTube へのアップロード、確認、監査、および対応しているアップロード後の操作を行うローカル MCP サーバーです。

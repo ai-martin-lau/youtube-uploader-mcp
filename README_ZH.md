@@ -1,5 +1,7 @@
 [English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Español](README_ES.md)
 
+![YouTube Uploader MCP](assets/repository-cover.png)
+
 # YouTube Uploader MCP
 
 一个通过 YouTube Data API v3 在本地运行的 MCP 服务器，用于上传、检查和审计 YouTube 视频，以及执行其支持的上传后操作。
